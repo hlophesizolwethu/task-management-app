@@ -1,52 +1,37 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect } from "react"
-import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { Loader2 } from 'lucide-react'
 
-interface ProtectedRouteProps {
-  children: React.ReactNode
-  requiredRole?: "admin" | "member"
-}
-
-export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, profile, loading } = useAuth()
-  const router = useRouter()
-  const pathname = usePathname()
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        // User is not authenticated, redirect to login
-        router.push(`/auth/login?returnUrl=${encodeURIComponent(pathname)}`)
-      } else if (requiredRole && profile && profile.role !== requiredRole) {
-        // User doesn't have the required role
-        router.push("/dashboard")
-      }
+    console.log("Protected route component", { user, loading })
+    
+    if (!loading && !user) {
+      console.log("No user in protected route, redirecting")
+      window.location.href = "/auth/login"
     }
-  }, [user, profile, loading, router, pathname, requiredRole])
+  }, [user, loading])
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-purple-900" />
+        <span className="ml-2">Loading...</span>
       </div>
     )
   }
 
-  // If there's a required role and the user doesn't have it, don't render children
-  if (requiredRole && profile && profile.role !== requiredRole) {
-    return null
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div>Not authenticated. Redirecting...</div>
+      </div>
+    )
   }
 
-  // If user is authenticated (and has the required role if specified), render children
-  if (user) {
-    return <>{children}</>
-  }
-
-  // Don't render anything while redirecting
-  return null
+  return <>{children}</>
 }
